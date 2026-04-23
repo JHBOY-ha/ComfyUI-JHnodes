@@ -1,0 +1,53 @@
+from pathlib import Path
+import importlib.util
+import sys
+import types
+
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def load_nodes_module():
+    stub = types.ModuleType("jhnodes.video_reader")
+    stub.load_single_image = lambda *args, **kwargs: None
+    stub.read_video_as_image_batch = lambda *args, **kwargs: None
+    sys.modules.setdefault("jhnodes.video_reader", stub)
+
+    spec = importlib.util.spec_from_file_location("jhnodes.nodes", ROOT / "jhnodes" / "nodes.py")
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+def load_root_module():
+    spec = importlib.util.spec_from_file_location(
+        "jhnodes_root",
+        ROOT / "__init__.py",
+        submodule_search_locations=[str(ROOT)],
+    )
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    stub = types.ModuleType("jhnodes_root.jhnodes.video_reader")
+    stub.load_single_image = lambda *args, **kwargs: None
+    stub.read_video_as_image_batch = lambda *args, **kwargs: None
+    sys.modules["jhnodes_root.jhnodes.video_reader"] = stub
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_folder_inputs_expose_vhs_path_picker_metadata():
+    nodes_module = load_nodes_module()
+    folder_count = nodes_module.FolderCount.INPUT_TYPES()["required"]["folder"]
+    load_folder_item = nodes_module.LoadFolderItem.INPUT_TYPES()["required"]["folder"]
+
+    assert folder_count[0] == "STRING"
+    assert load_folder_item[0] == "STRING"
+    assert folder_count[1]["vhs_path_extensions"] == []
+    assert load_folder_item[1]["vhs_path_extensions"] == []
+
+
+def test_package_exports_web_directory_for_frontend_extension():
+    module = load_root_module()
+    assert module.WEB_DIRECTORY == "./web"

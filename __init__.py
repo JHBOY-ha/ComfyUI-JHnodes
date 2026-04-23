@@ -1,4 +1,7 @@
+from .jhnodes import server as _server  # noqa: F401
 from .jhnodes.nodes import FolderCount, LoadFolderItem
+
+WEB_DIRECTORY = "./web"
 
 NODE_CLASS_MAPPINGS = {
     "JHnodes_FolderCount": FolderCount,

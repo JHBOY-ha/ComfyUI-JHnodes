@@ -14,7 +14,14 @@ class FolderCount:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "folder": ("STRING", {"default": "", "placeholder": "X://path/to/folder"}),
+                "folder": (
+                    "STRING",
+                    {
+                        "default": "",
+                        "placeholder": "X://path/to/folder",
+                        "vhs_path_extensions": [],
+                    },
+                ),
             }
         }
 
@@ -42,7 +49,14 @@ class LoadFolderItem:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "folder": ("STRING", {"default": "", "placeholder": "X://path/to/folder"}),
+                "folder": (
+                    "STRING",
+                    {
+                        "default": "",
+                        "placeholder": "X://path/to/folder",
+                        "vhs_path_extensions": [],
+                    },
+                ),
                 "index": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
                 "force_rate": ("FLOAT", {"default": 0, "min": 0, "max": 60, "step": 1}),
                 "custom_width": ("INT", {"default": 0, "min": 0, "max": DIMMAX, "step": 8}),

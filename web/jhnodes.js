@@ -4,14 +4,25 @@ import { api } from "../../scripts/api.js";
 const FOLDER_NODES = new Set(["JHnodes_FolderCount", "JHnodes_LoadFolderItem"]);
 
 function pathStem(value) {
-    const i = value.lastIndexOf("/");
-    if (i < 0) return ["", value];
-    return [value.slice(0, i + 1), value.slice(i + 1)];
+    const unixIndex = value.lastIndexOf("/");
+    const windowsIndex = value.lastIndexOf("\\");
+    const index = Math.max(unixIndex, windowsIndex);
+    if (index < 0) return ["", value];
+    return [value.slice(0, index + 1), value.slice(index + 1)];
+}
+
+function fitPath(ctx, text, width) {
+    if (ctx.measureText(text).width <= width) return text;
+    let shown = text;
+    while (shown.length > 1 && ctx.measureText("…" + shown).width > width) {
+        shown = shown.slice(1);
+    }
+    return "…" + shown;
 }
 
 function openFolderPicker(widget, node, event) {
-    if (widget._picker_open) return;
-    widget._picker_open = true;
+    if (widget._pickerOpen) return;
+    widget._pickerOpen = true;
 
     const dialog = document.createElement("div");
     dialog.className = "litegraph litesearchbox graphdialog rounded";
@@ -20,36 +31,37 @@ function openFolderPicker(widget, node, event) {
         '<input autofocus="" type="text" class="value" spellcheck="false">' +
         '<button class="rounded">OK</button>' +
         '<div class="helper"></div>';
+    dialog.close = () => {
+        dialog.remove();
+        widget._pickerOpen = false;
+    };
     document.body.append(dialog);
 
     const scale = app.canvas?.ds?.scale ?? 1;
-    if (scale > 1) dialog.style.transform = "scale(" + scale + ")";
+    if (scale > 1) {
+        dialog.style.transform = "scale(" + scale + ")";
+    }
 
     const input = dialog.querySelector(".value");
-    const options_element = dialog.querySelector(".helper");
+    const optionsElement = dialog.querySelector(".helper");
     input.value = widget.value || "";
 
     let entries = [];
-    let last_path = null;
+    let lastPath = null;
     let timeout = null;
 
-    const close = () => {
-        dialog.remove();
-        widget._picker_open = false;
-    };
-
     const commit = (value) => {
-        widget.value = value;
-        if (widget.callback) widget.callback(widget.value);
+        widget.value = value.replace(/[\\/]+$/, "");
+        widget.callback?.(widget.value);
         node.graph?.setDirtyCanvas(true, true);
     };
 
     async function fetchOptions(path) {
         try {
             const url = api.apiURL("/jhnodes/listdir?" + new URLSearchParams({ path }));
-            const res = await fetch(url);
-            return await res.json();
-        } catch (e) {
+            const response = await fetch(url);
+            return await response.json();
+        } catch {
             return [];
         }
     }
@@ -57,118 +69,134 @@ function openFolderPicker(widget, node, event) {
     async function updateOptions() {
         timeout = null;
         const [path, remainder] = pathStem(input.value);
-        if (last_path !== path) {
+        if (lastPath !== path) {
             entries = await fetchOptions(path);
-            last_path = path;
+            lastPath = path;
         }
-        options_element.innerHTML = "";
+
+        optionsElement.innerHTML = "";
         for (const name of entries) {
             if (!name.startsWith(remainder)) continue;
-            const el = document.createElement("div");
-            el.innerText = name;
-            el.className = "litegraph lite-search-item is-dir";
-            el.addEventListener("click", () => {
-                input.value = last_path + name;
+            const option = document.createElement("div");
+            option.innerText = name;
+            option.className = "litegraph lite-search-item is-dir";
+            option.addEventListener("click", () => {
+                input.value = lastPath + name;
                 if (timeout) clearTimeout(timeout);
                 timeout = setTimeout(updateOptions, 10);
             });
-            options_element.appendChild(el);
+            optionsElement.appendChild(option);
         }
     }
 
     input.addEventListener("keydown", (e) => {
         if (e.keyCode === 27) {
-            close();
-            e.preventDefault();
-            e.stopPropagation();
+            dialog.close();
         } else if (e.keyCode === 13) {
-            commit(input.value.replace(/\/+$/, ""));
-            close();
-            e.preventDefault();
-            e.stopPropagation();
+            commit(input.value);
+            dialog.close();
         } else {
             if (timeout) clearTimeout(timeout);
             timeout = setTimeout(updateOptions, 10);
+            return;
         }
+        e.preventDefault();
+        e.stopPropagation();
     });
 
     dialog.querySelector("button").addEventListener("click", () => {
-        commit(input.value.replace(/\/+$/, ""));
-        close();
+        commit(input.value);
+        dialog.close();
     });
 
     const rect = app.canvas.canvas.getBoundingClientRect();
-    let x, y;
-    if (event && event.clientX != null) {
-        x = event.clientX - 20 - rect.left;
-        y = event.clientY - 20 - rect.top;
-    } else {
-        x = rect.width * 0.5 - 150;
-        y = rect.height * 0.5 - 50;
+    let offsetX = -20;
+    let offsetY = -20;
+    if (rect) {
+        offsetX -= rect.left;
+        offsetY -= rect.top;
     }
-    dialog.style.left = x + "px";
-    dialog.style.top = y + "px";
+
+    if (event?.clientX != null) {
+        dialog.style.left = event.clientX + offsetX + "px";
+        dialog.style.top = event.clientY + offsetY + "px";
+    } else {
+        dialog.style.left = app.canvas.canvas.width * 0.5 + offsetX + "px";
+        dialog.style.top = app.canvas.canvas.height * 0.5 + offsetY + "px";
+    }
 
     setTimeout(async () => {
         input.focus();
         input.select();
         await updateOptions();
     }, 10);
+
+    return dialog;
 }
 
-function drawPathWidget(ctx, node, widget_width, y, H) {
-    const show_text = app.canvas.ds.scale >= (app.canvas.low_quality_zoom_threshold ?? 0.5);
+function drawFolderWidget(ctx, node, widgetWidth, y, height) {
+    const showText =
+        app.canvas.ds.scale >= (app.canvas.low_quality_zoom_threshold ?? 0.5);
     const margin = 15;
     ctx.textAlign = "left";
     ctx.strokeStyle = LiteGraph.WIDGET_OUTLINE_COLOR;
     ctx.fillStyle = LiteGraph.WIDGET_BGCOLOR;
     ctx.beginPath();
-    if (show_text) ctx.roundRect(margin, y, widget_width - margin * 2, H, [H * 0.5]);
-    else ctx.rect(margin, y, widget_width - margin * 2, H);
+    if (showText) {
+        ctx.roundRect(margin, y, widgetWidth - margin * 2, height, [height * 0.5]);
+    } else {
+        ctx.rect(margin, y, widgetWidth - margin * 2, height);
+    }
     ctx.fill();
-    if (!show_text) return;
+    if (!showText) return;
     if (!this.disabled) ctx.stroke();
+
     ctx.save();
     ctx.beginPath();
-    ctx.rect(margin, y, widget_width - margin * 2, H);
+    ctx.rect(margin, y, widgetWidth - margin * 2, height);
     ctx.clip();
 
-    ctx.fillStyle = LiteGraph.WIDGET_SECONDARY_TEXT_COLOR;
+    let freeWidth = widgetWidth - margin * 2 - 40;
     const label = this.label || this.name;
-    const labelWidth = ctx.measureText(label).width;
-    ctx.fillText(label, margin * 2, y + H * 0.7);
+    ctx.fillStyle = LiteGraph.WIDGET_SECONDARY_TEXT_COLOR;
+    if (label) {
+        const labelWidth = ctx.measureText(label).width;
+        freeWidth -= labelWidth;
+        ctx.fillText(label, margin * 2, y + height * 0.7);
+    }
 
     ctx.fillStyle = this.value ? LiteGraph.WIDGET_TEXT_COLOR : "#777";
     ctx.textAlign = "right";
-    const placeholder = this.options?.placeholder || "click to pick folder";
-    const display = String(this.value || placeholder);
-    const maxWidth = widget_width - margin * 3 - labelWidth - 10;
-    let shown = display;
-    if (ctx.measureText(shown).width > maxWidth) {
-        // truncate from the left so the tail (most specific dir) stays visible
-        while (shown.length > 1 && ctx.measureText("…" + shown).width > maxWidth) {
-            shown = shown.slice(1);
-        }
-        shown = "…" + shown;
-    }
-    ctx.fillText(shown, widget_width - margin * 2, y + H * 0.7);
+    const display = String(this.value || this.options.placeholder || "");
+    ctx.fillText(
+        fitPath(ctx, display, freeWidth),
+        widgetWidth - margin * 2,
+        y + height * 0.7
+    );
     ctx.restore();
 }
 
 function replaceFolderWidget(node) {
     if (!node.widgets) return;
-    const idx = node.widgets.findIndex((w) => w.name === "folder");
-    if (idx < 0) return;
-    const old = node.widgets[idx];
-    const picker = {
-        name: "folder",
+    const index = node.widgets.findIndex((widget) => widget.name === "folder");
+    if (index < 0) return;
+
+    const old = node.widgets[index];
+    if (old.type !== "text") return;
+
+    node.widgets[index] = {
+        name: old.name,
         type: "JHNODES.FOLDER",
         value: old.value || "",
-        options: { placeholder: old.options?.placeholder || "click to pick folder" },
-        draw: drawPathWidget,
-        mouse(event, pos, node) {
+        callback: old.callback,
+        options: {
+            ...old.options,
+            placeholder: old.options?.placeholder || "X://path/to/folder",
+        },
+        draw: drawFolderWidget,
+        mouse(event, pos, nodeRef) {
             if (event.type === "pointerdown") {
-                openFolderPicker(this, node, event);
+                openFolderPicker(this, nodeRef, event);
                 return true;
             }
             return false;
@@ -180,18 +208,17 @@ function replaceFolderWidget(node) {
             return this.value;
         },
     };
-    node.widgets[idx] = picker;
 }
 
 app.registerExtension({
     name: "JHnodes.FolderPicker",
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (!FOLDER_NODES.has(nodeData?.name)) return;
-        const orig = nodeType.prototype.onNodeCreated;
+        const original = nodeType.prototype.onNodeCreated;
         nodeType.prototype.onNodeCreated = function () {
-            const r = orig ? orig.apply(this, arguments) : undefined;
+            const result = original ? original.apply(this, arguments) : undefined;
             replaceFolderWidget(this);
-            return r;
+            return result;
         };
     },
 });
