@@ -1,0 +1,10 @@
+[project]
+name = "comfyui-jhnodes"
+description = "JH custom nodes for ComfyUI. Starts with a folder-batch loader (count + index-based load) that outputs VHS-compatible IMAGE / frame_count / audio / video_info."
+version = "0.1.0"
+dependencies = ["opencv-python", "numpy", "Pillow", "imageio-ffmpeg"]
+
+[tool.comfy]
+PublisherId = "jhboy"
+DisplayName = "ComfyUI-JHnodes"
+Icon = ""
