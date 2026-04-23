@@ -42,6 +42,23 @@ def _roots() -> list[str]:
     return roots
 
 
+def _comfy_root() -> str:
+    if _comfy_server is not None and getattr(_comfy_server, "__file__", None):
+        return os.path.dirname(os.path.abspath(_comfy_server.__file__))
+    return os.getcwd()
+
+
+def _resolve_path(raw: str) -> str:
+    raw = (raw or "").strip()
+    if not raw:
+        return _comfy_root()
+
+    expanded = os.path.expanduser(raw)
+    if os.path.isabs(expanded):
+        return os.path.abspath(expanded)
+    return os.path.abspath(os.path.join(_comfy_root(), expanded))
+
+
 def register_routes():
     if _comfy_server is None or not hasattr(_comfy_server, "PromptServer"):
         return
@@ -51,9 +68,7 @@ def register_routes():
     @routes.get("/jhnodes/listdir")
     async def jhnodes_listdir(request):
         raw = request.rel_url.query.get("path", "")
-        path = os.path.abspath(os.path.expanduser(raw)) if raw else ""
-        if not path:
-            return web.json_response(_roots())
+        path = _resolve_path(raw)
 
         if not os.path.isdir(path):
             parent = os.path.dirname(path)

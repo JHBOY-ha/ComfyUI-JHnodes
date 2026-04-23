@@ -51,3 +51,17 @@ def test_folder_inputs_expose_vhs_path_picker_metadata():
 def test_package_exports_web_directory_for_frontend_extension():
     module = load_root_module()
     assert module.WEB_DIRECTORY == "./web"
+
+
+def test_server_resolves_empty_and_relative_paths_from_comfy_root():
+    import jhnodes.server as server
+
+    comfy_root = "/tmp/ComfyUI"
+    original = server._comfy_root
+    server._comfy_root = lambda: comfy_root
+    try:
+        assert server._resolve_path("") == comfy_root
+        assert server._resolve_path("input/videos") == str(Path(comfy_root) / "input" / "videos")
+        assert server._resolve_path("/var/tmp") == "/var/tmp"
+    finally:
+        server._comfy_root = original
