@@ -28,8 +28,8 @@ class FolderCount:
         }
 
     CATEGORY = CATEGORY_NAME
-    RETURN_TYPES = ("INT", "STRING")
-    RETURN_NAMES = ("count", "folder")
+    RETURN_TYPES = ("INT", "STRING", "INT", "INT")
+    RETURN_NAMES = ("count", "folder", "start_index", "limit")
     FUNCTION = "run"
 
     def run(self, folder, start_index, limit):
@@ -41,7 +41,7 @@ class FolderCount:
             entries = entries[start_index:]
         if limit > 0:
             entries = entries[:limit]
-        return (len(entries), folder_clean)
+        return (len(entries), folder_clean, start_index, limit)
 
     @classmethod
     def IS_CHANGED(cls, folder, start_index=0, limit=0):

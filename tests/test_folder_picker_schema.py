@@ -53,6 +53,8 @@ def test_folder_inputs_expose_vhs_path_picker_metadata():
     assert folder_count_inputs["start_index"][1]["default"] == 0
     assert folder_count_inputs["limit"][0] == "INT"
     assert folder_count_inputs["limit"][1]["default"] == 0
+    assert nodes_module.FolderCount.RETURN_TYPES == ("INT", "STRING", "INT", "INT")
+    assert nodes_module.FolderCount.RETURN_NAMES == ("count", "folder", "start_index", "limit")
     assert load_folder_item_inputs["start_index"][0] == "INT"
     assert load_folder_item_inputs["start_index"][1]["default"] == 0
     assert load_folder_item_inputs["limit"][0] == "INT"
@@ -69,12 +71,12 @@ def test_folder_count_limit_and_start_index_slice_after_filtering(tmp_path):
 
     node = nodes_module.FolderCount()
 
-    assert node.run(str(folder), 0, 0) == (3, str(folder))
-    assert node.run(str(folder), 0, 2) == (2, str(folder))
-    assert node.run(str(folder), 0, 10) == (3, str(folder))
-    assert node.run(str(folder), 1, 0) == (2, str(folder))
-    assert node.run(str(folder), 1, 1) == (1, str(folder))
-    assert node.run(str(folder), 5, 0) == (0, str(folder))
+    assert node.run(str(folder), 0, 0) == (3, str(folder), 0, 0)
+    assert node.run(str(folder), 0, 2) == (2, str(folder), 0, 2)
+    assert node.run(str(folder), 0, 10) == (3, str(folder), 0, 10)
+    assert node.run(str(folder), 1, 0) == (2, str(folder), 1, 0)
+    assert node.run(str(folder), 1, 1) == (1, str(folder), 1, 1)
+    assert node.run(str(folder), 5, 0) == (0, str(folder), 5, 0)
 
 
 def test_load_folder_item_offsets_index_by_start_index(tmp_path):

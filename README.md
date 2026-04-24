@@ -26,6 +26,8 @@ pip install -r requirements.txt
 | --- | --- | --- |
 | `count` | INT | 文件夹下视频+图片文件数 |
 | `folder` | STRING | 规范化后的文件夹路径，可直接连到 `Load Folder Item` |
+| `start_index` | INT | 原样输出，可直接连到 `Load Folder Item.start_index` |
+| `limit` | INT | 原样输出，可直接连到 `Load Folder Item.limit` |
 
 识别扩展名：
 
@@ -74,11 +76,10 @@ pip install -r requirements.txt
 ```text
 FolderCount.count  -> For Loop Start.total
 FolderCount.folder -> Load Folder Item.folder
+FolderCount.start_index -> Load Folder Item.start_index
+FolderCount.limit -> Load Folder Item.limit
 For Loop Start.index -> Load Folder Item.index
 For Loop Start.flow -> For Loop End.flow
-
-FolderCount.start_index 和 Load Folder Item.start_index 填同一个值
-FolderCount.limit 和 Load Folder Item.limit 填同一个值
 
 Load Folder Item.filename -> For Loop End.initial_value1
 For Loop End.value1 -> Preview Any / Preview as Text / 其他会真正执行的下游节点
