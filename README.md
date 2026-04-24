@@ -43,13 +43,13 @@ pip install -r requirements.txt
 | 输入 | 说明 |
 | --- | --- |
 | `folder`, `index` | 文件夹 + 索引 |
-| `start_index` | 从排序后的第几个匹配文件开始读取；`0` 表示从头开始 |
-| `limit` | 允许读取多少个匹配文件；`0` 表示不限制 |
 | `force_rate` | 目标 fps；0 保留源 fps |
 | `custom_width`, `custom_height` | 目标尺寸（0 保持原尺寸，自动对齐 8） |
 | `frame_load_cap` | 最多读多少帧（0 全部） |
 | `skip_first_frames` | 跳过前 N 帧 |
 | `select_every_nth` | 每 N 帧取 1 帧 |
+| `start_index`（可选） | 从排序后的第几个匹配文件开始读取；用于连接 `Folder Count.start_index` |
+| `limit`（可选） | 允许读取多少个匹配文件；用于连接 `Folder Count.limit`，`0` 表示不限制 |
 
 | 输出 | 类型 |
 | --- | --- |

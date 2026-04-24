@@ -70,14 +70,16 @@ class LoadFolderItem:
                     },
                 ),
                 "index": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
-                "start_index": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
-                "limit": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
                 "force_rate": ("FLOAT", {"default": 0, "min": 0, "max": 60, "step": 1}),
                 "custom_width": ("INT", {"default": 0, "min": 0, "max": DIMMAX, "step": 8}),
                 "custom_height": ("INT", {"default": 0, "min": 0, "max": DIMMAX, "step": 8}),
                 "frame_load_cap": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
                 "skip_first_frames": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
                 "select_every_nth": ("INT", {"default": 1, "min": 1, "max": BIGMAX, "step": 1}),
+            },
+            "optional": {
+                "start_index": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
+                "limit": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
             }
         }
 
@@ -86,8 +88,8 @@ class LoadFolderItem:
     RETURN_NAMES = ("IMAGE", "frame_count", "audio", "video_info", "filename")
     FUNCTION = "run"
 
-    def run(self, folder, index, start_index, limit, force_rate, custom_width, custom_height,
-            frame_load_cap, skip_first_frames, select_every_nth):
+    def run(self, folder, index, force_rate, custom_width, custom_height,
+            frame_load_cap, skip_first_frames, select_every_nth, start_index=0, limit=0):
         entries = list_folder_entries(folder)
         if not entries:
             raise FileNotFoundError(f"No video/image files in: {folder}")

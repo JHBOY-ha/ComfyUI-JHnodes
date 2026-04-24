@@ -41,7 +41,9 @@ def load_root_module():
 def test_folder_inputs_expose_vhs_path_picker_metadata():
     nodes_module = load_nodes_module()
     folder_count_inputs = nodes_module.FolderCount.INPUT_TYPES()["required"]
-    load_folder_item_inputs = nodes_module.LoadFolderItem.INPUT_TYPES()["required"]
+    load_folder_item_types = nodes_module.LoadFolderItem.INPUT_TYPES()
+    load_folder_item_inputs = load_folder_item_types["required"]
+    load_folder_item_optional = load_folder_item_types["optional"]
     folder_count = folder_count_inputs["folder"]
     load_folder_item = load_folder_item_inputs["folder"]
 
@@ -55,10 +57,12 @@ def test_folder_inputs_expose_vhs_path_picker_metadata():
     assert folder_count_inputs["limit"][1]["default"] == 0
     assert nodes_module.FolderCount.RETURN_TYPES == ("INT", "STRING", "INT", "INT")
     assert nodes_module.FolderCount.RETURN_NAMES == ("count", "folder", "start_index", "limit")
-    assert load_folder_item_inputs["start_index"][0] == "INT"
-    assert load_folder_item_inputs["start_index"][1]["default"] == 0
-    assert load_folder_item_inputs["limit"][0] == "INT"
-    assert load_folder_item_inputs["limit"][1]["default"] == 0
+    assert "start_index" not in load_folder_item_inputs
+    assert "limit" not in load_folder_item_inputs
+    assert load_folder_item_optional["start_index"][0] == "INT"
+    assert load_folder_item_optional["start_index"][1]["default"] == 0
+    assert load_folder_item_optional["limit"][0] == "INT"
+    assert load_folder_item_optional["limit"][1]["default"] == 0
 
 
 def test_folder_count_limit_and_start_index_slice_after_filtering(tmp_path):
@@ -91,11 +95,11 @@ def test_load_folder_item_offsets_index_by_start_index(tmp_path):
 
     node = nodes_module.LoadFolderItem()
 
-    assert node.run(str(folder), 0, 1, 0, 0, 0, 0, 0, 0, 1)[4] == "b.png"
-    assert node.run(str(folder), 1, 1, 0, 0, 0, 0, 0, 0, 1)[4] == "c.png"
+    assert node.run(str(folder), 0, 0, 0, 0, 0, 0, 1, start_index=1)[4] == "b.png"
+    assert node.run(str(folder), 1, 0, 0, 0, 0, 0, 1, start_index=1)[4] == "c.png"
 
     with pytest.raises(IndexError, match="outside limited range"):
-        node.run(str(folder), 1, 1, 1, 0, 0, 0, 0, 0, 1)
+        node.run(str(folder), 1, 0, 0, 0, 0, 0, 1, start_index=1, limit=1)
 
 
 def test_normalize_folder_handles_none_as_empty_string():
