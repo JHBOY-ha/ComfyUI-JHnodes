@@ -96,3 +96,7 @@ ComfyUI-JHnodes/
     ├── ffmpeg.py               # ffmpeg_path + get_audio + LazyAudioMap
     └── utils.py                # 扩展名常量 + 目录枚举
 ```
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 only.
