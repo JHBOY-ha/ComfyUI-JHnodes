@@ -6,8 +6,10 @@ IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".bmp", ".webp", ".tif", ".tiff")
 ALL_EXTENSIONS = VIDEO_EXTENSIONS + IMAGE_EXTENSIONS
 
 
-def normalize_folder(folder: str) -> str:
-    return folder.strip().strip('"').strip("'")
+def normalize_folder(folder: str | None) -> str:
+    if folder is None:
+        return ""
+    return str(folder).strip().strip('"').strip("'")
 
 
 def list_folder_entries(folder: str) -> list:

@@ -26,6 +26,10 @@ EMPTY_AUDIO = {
 }
 
 
+def _has_no_audio_stream(stderr: str) -> bool:
+    return "Output file does not contain any stream" in stderr
+
+
 def get_audio(file, start_time=0, duration=0):
     if FFMPEG_PATH is None:
         raise RuntimeError(
@@ -41,9 +45,12 @@ def get_audio(file, start_time=0, duration=0):
             args + ["-f", "f32le", "-"], capture_output=True, check=True
         )
     except subprocess.CalledProcessError as e:
+        stderr = e.stderr.decode("utf-8", errors="replace")
+        if _has_no_audio_stream(stderr):
+            return EMPTY_AUDIO
         raise RuntimeError(
             f"ffmpeg failed to extract audio from {file}:\n"
-            + e.stderr.decode("utf-8", errors="replace")
+            + stderr
         )
     waveform = torch.frombuffer(bytearray(res.stdout), dtype=torch.float32)
     m = re.search(r", (\d+) Hz, (\w+), ", res.stderr.decode("utf-8", errors="replace"))
