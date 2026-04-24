@@ -19,6 +19,7 @@ pip install -r requirements.txt
 | 输入 | 类型 | 说明 |
 | --- | --- | --- |
 | `folder` | STRING | 本地文件夹绝对路径 |
+| `start_index` | INT | 从排序后的第几个匹配文件开始统计；`0` 表示从头开始 |
 | `limit` | INT | 最多统计多少个匹配文件；`0` 表示不限制 |
 
 | 输出 | 类型 | 说明 |

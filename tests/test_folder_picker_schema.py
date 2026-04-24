@@ -47,11 +47,13 @@ def test_folder_inputs_expose_vhs_path_picker_metadata():
     assert load_folder_item[0] == "STRING"
     assert folder_count[1]["vhs_path_extensions"] == []
     assert load_folder_item[1]["vhs_path_extensions"] == []
+    assert folder_count_inputs["start_index"][0] == "INT"
+    assert folder_count_inputs["start_index"][1]["default"] == 0
     assert folder_count_inputs["limit"][0] == "INT"
     assert folder_count_inputs["limit"][1]["default"] == 0
 
 
-def test_folder_count_limit_caps_count_after_filtering(tmp_path):
+def test_folder_count_limit_and_start_index_slice_after_filtering(tmp_path):
     nodes_module = load_nodes_module()
     folder = tmp_path / "clips"
     folder.mkdir()
@@ -61,9 +63,12 @@ def test_folder_count_limit_caps_count_after_filtering(tmp_path):
 
     node = nodes_module.FolderCount()
 
-    assert node.run(str(folder), 0) == (3, str(folder))
-    assert node.run(str(folder), 2) == (2, str(folder))
-    assert node.run(str(folder), 10) == (3, str(folder))
+    assert node.run(str(folder), 0, 0) == (3, str(folder))
+    assert node.run(str(folder), 0, 2) == (2, str(folder))
+    assert node.run(str(folder), 0, 10) == (3, str(folder))
+    assert node.run(str(folder), 1, 0) == (2, str(folder))
+    assert node.run(str(folder), 1, 1) == (1, str(folder))
+    assert node.run(str(folder), 5, 0) == (0, str(folder))
 
 
 def test_package_exports_web_directory_for_frontend_extension():
