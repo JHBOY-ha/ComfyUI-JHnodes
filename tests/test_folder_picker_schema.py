@@ -61,8 +61,10 @@ def test_folder_inputs_expose_vhs_path_picker_metadata():
     assert "limit" not in load_folder_item_inputs
     assert load_folder_item_optional["start_index"][0] == "INT"
     assert load_folder_item_optional["start_index"][1]["default"] == 0
+    assert load_folder_item_optional["start_index"][1]["forceInput"] is True
     assert load_folder_item_optional["limit"][0] == "INT"
     assert load_folder_item_optional["limit"][1]["default"] == 0
+    assert load_folder_item_optional["limit"][1]["forceInput"] is True
 
 
 def test_folder_count_limit_and_start_index_slice_after_filtering(tmp_path):

@@ -48,8 +48,8 @@ pip install -r requirements.txt
 | `frame_load_cap` | 最多读多少帧（0 全部） |
 | `skip_first_frames` | 跳过前 N 帧 |
 | `select_every_nth` | 每 N 帧取 1 帧 |
-| `start_index`（可选） | 从排序后的第几个匹配文件开始读取；用于连接 `Folder Count.start_index` |
-| `limit`（可选） | 允许读取多少个匹配文件；用于连接 `Folder Count.limit`，`0` 表示不限制 |
+| `start_index`（连接输入） | 从排序后的第几个匹配文件开始读取；用于连接 `Folder Count.start_index` |
+| `limit`（连接输入） | 允许读取多少个匹配文件；用于连接 `Folder Count.limit`，`0` 表示不限制 |
 
 | 输出 | 类型 |
 | --- | --- |

@@ -78,8 +78,14 @@ class LoadFolderItem:
                 "select_every_nth": ("INT", {"default": 1, "min": 1, "max": BIGMAX, "step": 1}),
             },
             "optional": {
-                "start_index": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
-                "limit": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
+                "start_index": (
+                    "INT",
+                    {"default": 0, "min": 0, "max": BIGMAX, "step": 1, "forceInput": True},
+                ),
+                "limit": (
+                    "INT",
+                    {"default": 0, "min": 0, "max": BIGMAX, "step": 1, "forceInput": True},
+                ),
             }
         }
 
