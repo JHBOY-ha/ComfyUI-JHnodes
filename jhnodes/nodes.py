@@ -22,6 +22,7 @@ class FolderCount:
                         "vhs_path_extensions": [],
                     },
                 ),
+                "limit": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
             }
         }
 
@@ -30,16 +31,22 @@ class FolderCount:
     RETURN_NAMES = ("count", "folder")
     FUNCTION = "run"
 
-    def run(self, folder):
+    def run(self, folder, limit):
         folder_clean = normalize_folder(folder)
         if not os.path.isdir(folder_clean):
             raise FileNotFoundError(f"Folder not found: {folder}")
-        return (len(list_folder_entries(folder_clean)), folder_clean)
+        entries = list_folder_entries(folder_clean)
+        if limit > 0:
+            entries = entries[:limit]
+        return (len(entries), folder_clean)
 
     @classmethod
-    def IS_CHANGED(cls, folder):
+    def IS_CHANGED(cls, folder, limit=0):
         h = hashlib.sha256()
-        for p in list_folder_entries(folder):
+        entries = list_folder_entries(folder)
+        if limit > 0:
+            entries = entries[:limit]
+        for p in entries:
             h.update(file_change_hash(p).encode())
         return h.hexdigest() or "empty"
 

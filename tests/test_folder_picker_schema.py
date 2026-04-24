@@ -39,13 +39,31 @@ def load_root_module():
 
 def test_folder_inputs_expose_vhs_path_picker_metadata():
     nodes_module = load_nodes_module()
-    folder_count = nodes_module.FolderCount.INPUT_TYPES()["required"]["folder"]
+    folder_count_inputs = nodes_module.FolderCount.INPUT_TYPES()["required"]
+    folder_count = folder_count_inputs["folder"]
     load_folder_item = nodes_module.LoadFolderItem.INPUT_TYPES()["required"]["folder"]
 
     assert folder_count[0] == "STRING"
     assert load_folder_item[0] == "STRING"
     assert folder_count[1]["vhs_path_extensions"] == []
     assert load_folder_item[1]["vhs_path_extensions"] == []
+    assert folder_count_inputs["limit"][0] == "INT"
+    assert folder_count_inputs["limit"][1]["default"] == 0
+
+
+def test_folder_count_limit_caps_count_after_filtering(tmp_path):
+    nodes_module = load_nodes_module()
+    folder = tmp_path / "clips"
+    folder.mkdir()
+
+    for name in ["b.mp4", "a.mov", "c.png", "ignore.txt"]:
+        (folder / name).write_text("x")
+
+    node = nodes_module.FolderCount()
+
+    assert node.run(str(folder), 0) == (3, str(folder))
+    assert node.run(str(folder), 2) == (2, str(folder))
+    assert node.run(str(folder), 10) == (3, str(folder))
 
 
 def test_package_exports_web_directory_for_frontend_extension():

@@ -19,6 +19,7 @@ pip install -r requirements.txt
 | 输入 | 类型 | 说明 |
 | --- | --- | --- |
 | `folder` | STRING | 本地文件夹绝对路径 |
+| `limit` | INT | 最多统计多少个匹配文件；`0` 表示不限制 |
 
 | 输出 | 类型 | 说明 |
 | --- | --- | --- |
@@ -62,6 +63,26 @@ pip install -r requirements.txt
                           ├─→ [LoadFolderItem] ─→ [VHS VideoCombine / KSampler / ...]
             index (0..N-1)─┘
 ```
+
+### 与 EasyUse `For Loop` 一起使用
+
+如果你用的是 `ComfyUI-Easy-Use` 的 `For Loop Start / End` 来遍历文件夹，推荐接法是：
+
+```text
+FolderCount.count  -> For Loop Start.total
+FolderCount.folder -> Load Folder Item.folder
+For Loop Start.index -> Load Folder Item.index
+For Loop Start.flow -> For Loop End.flow
+
+Load Folder Item.filename -> For Loop End.initial_value1
+For Loop End.value1 -> Preview Any / Preview as Text / 其他会真正执行的下游节点
+```
+
+注意：
+
+- `For Loop End` 的至少一个 `valueX` 输出必须被下游节点实际消费，否则 `EasyUse` 的循环递归不会真正触发，看起来就像只执行了一次。
+- 只连接 `flow` 不够；`flow` 只是控制信号，不会单独强制 `For Loop End` 执行。
+- `Preview Image` 可以继续直接接在 `Load Folder Item.IMAGE` 上做图像预览，但它不能替代 `For Loop End.valueX` 的下游消费。
 
 ## 布局
 
