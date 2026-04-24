@@ -36,11 +36,13 @@ pip install -r requirements.txt
 
 ### Load Folder Item — `JHnodes_LoadFolderItem`
 
-按 **0-based** 索引读取文件夹下排序后的第 `index` 个文件。视频走 cv2 解码（移植自 VHS `cv_frame_generator`），图片走 PIL。
+按 **0-based** 索引读取文件夹下排序后的第 `start_index + index` 个文件。视频走 cv2 解码（移植自 VHS `cv_frame_generator`），图片走 PIL。
 
 | 输入 | 说明 |
 | --- | --- |
 | `folder`, `index` | 文件夹 + 索引 |
+| `start_index` | 从排序后的第几个匹配文件开始读取；`0` 表示从头开始 |
+| `limit` | 允许读取多少个匹配文件；`0` 表示不限制 |
 | `force_rate` | 目标 fps；0 保留源 fps |
 | `custom_width`, `custom_height` | 目标尺寸（0 保持原尺寸，自动对齐 8） |
 | `frame_load_cap` | 最多读多少帧（0 全部） |
@@ -74,6 +76,9 @@ FolderCount.count  -> For Loop Start.total
 FolderCount.folder -> Load Folder Item.folder
 For Loop Start.index -> Load Folder Item.index
 For Loop Start.flow -> For Loop End.flow
+
+FolderCount.start_index 和 Load Folder Item.start_index 填同一个值
+FolderCount.limit 和 Load Folder Item.limit 填同一个值
 
 Load Folder Item.filename -> For Loop End.initial_value1
 For Loop End.value1 -> Preview Any / Preview as Text / 其他会真正执行的下游节点

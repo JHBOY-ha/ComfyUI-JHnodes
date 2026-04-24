@@ -70,6 +70,8 @@ class LoadFolderItem:
                     },
                 ),
                 "index": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
+                "start_index": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
+                "limit": ("INT", {"default": 0, "min": 0, "max": BIGMAX, "step": 1}),
                 "force_rate": ("FLOAT", {"default": 0, "min": 0, "max": 60, "step": 1}),
                 "custom_width": ("INT", {"default": 0, "min": 0, "max": DIMMAX, "step": 8}),
                 "custom_height": ("INT", {"default": 0, "min": 0, "max": DIMMAX, "step": 8}),
@@ -84,15 +86,19 @@ class LoadFolderItem:
     RETURN_NAMES = ("IMAGE", "frame_count", "audio", "video_info", "filename")
     FUNCTION = "run"
 
-    def run(self, folder, index, force_rate, custom_width, custom_height,
+    def run(self, folder, index, start_index, limit, force_rate, custom_width, custom_height,
             frame_load_cap, skip_first_frames, select_every_nth):
         entries = list_folder_entries(folder)
         if not entries:
             raise FileNotFoundError(f"No video/image files in: {folder}")
-        if not 0 <= index < len(entries):
-            raise IndexError(f"index {index} out of range [0, {len(entries)})")
+        if limit > 0 and index >= limit:
+            raise IndexError(f"index {index} outside limited range [0, {limit})")
 
-        path = entries[index]
+        entry_index = start_index + index
+        if not 0 <= entry_index < len(entries):
+            raise IndexError(f"index {entry_index} out of range [0, {len(entries)})")
+
+        path = entries[entry_index]
         ext = os.path.splitext(path)[1].lower()
         if ext in VIDEO_EXTENSIONS:
             images, frame_count, audio, info = read_video_as_image_batch(
@@ -111,8 +117,11 @@ class LoadFolderItem:
         return (images, frame_count, audio, info, os.path.basename(path))
 
     @classmethod
-    def IS_CHANGED(cls, folder, index, **kwargs):
+    def IS_CHANGED(cls, folder, index, start_index=0, limit=0, **kwargs):
         entries = list_folder_entries(folder)
-        if 0 <= index < len(entries):
-            return file_change_hash(entries[index])
-        return f"OOR:{index}/{len(entries)}"
+        if limit > 0 and index >= limit:
+            return f"OOL:{index}/{limit}"
+        entry_index = start_index + index
+        if 0 <= entry_index < len(entries):
+            return file_change_hash(entries[entry_index])
+        return f"OOR:{entry_index}/{len(entries)}"
