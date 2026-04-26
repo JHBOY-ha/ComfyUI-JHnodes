@@ -12,6 +12,33 @@ pip install -r requirements.txt
 
 ## 节点
 
+### Clear Memory Cache — `JHnodes_ClearMemoryCache`
+
+用于放在 EasyUse loop 或其他长流程中间，执行到该节点时清理 Python / PyTorch / ComfyUI 缓存，并把输入原样透传到输出。
+
+| 输入              | 类型    | 说明                                                                 |
+| ----------------- | ------- | -------------------------------------------------------------------- |
+| `anything`        | `*`     | 任意类型连接输入；节点会原样输出，用来控制清理发生在这条执行链上     |
+| `unload_models`   | BOOLEAN | 是否调用 ComfyUI `unload_all_models`；更彻底，但下一轮可能需要重载模型 |
+| `clear_cuda`      | BOOLEAN | 清理 torch CUDA/MPS/XPU 等加速器缓存；默认开启                       |
+| `collect_python`  | BOOLEAN | 执行 `gc.collect()`；默认开启                                         |
+
+| 输出     | 类型   | 说明                         |
+| -------- | ------ | ---------------------------- |
+| `output` | `*`    | 原样透传的输入               |
+| `status` | STRING | 本次尝试执行过的清理动作摘要 |
+
+建议接法：
+
+```text
+上游必须执行的输出 -> Clear Memory Cache.anything
+Clear Memory Cache.output -> For Loop End.flow 或 For Loop End.valueX
+```
+
+如果要清理每一次循环产生的视频/图片张量，节点必须放在该轮重负载节点之后、`For Loop End` 之前，并且 `output` 要继续接到会被执行的下游。只把节点孤立放在画布上不会触发执行。
+
+注意：这个节点可以释放 PyTorch/ComfyUI 已经不再引用的缓存，但不能释放仍被 loop 的 `valueX`、预览节点、保存节点、视频合成节点或其他下游对象持有的张量。如果某个下游节点把所有循环结果累积起来，显存仍可能增长。
+
 ### Folder Count — `JHnodes_FolderCount`
 
 | 输入            | 类型   | 说明                                                 |

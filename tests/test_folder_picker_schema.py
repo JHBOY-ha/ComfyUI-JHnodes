@@ -113,6 +113,96 @@ def test_normalize_folder_handles_none_as_empty_string():
 def test_package_exports_web_directory_for_frontend_extension():
     module = load_root_module()
     assert module.WEB_DIRECTORY == "./web"
+    assert "JHnodes_ClearMemoryCache" in module.NODE_CLASS_MAPPINGS
+    assert module.NODE_DISPLAY_NAME_MAPPINGS["JHnodes_ClearMemoryCache"] == "Clear Memory Cache"
+
+
+def test_clear_memory_cache_node_is_passthrough_and_exposes_controls():
+    nodes_module = load_nodes_module()
+    node_inputs = nodes_module.ClearMemoryCache.INPUT_TYPES()
+
+    assert node_inputs["required"]["anything"][0] == "*"
+    assert node_inputs["required"]["anything"][1]["forceInput"] is True
+    assert node_inputs["required"]["unload_models"][0] == "BOOLEAN"
+    assert node_inputs["required"]["clear_cuda"][0] == "BOOLEAN"
+    assert node_inputs["required"]["collect_python"][0] == "BOOLEAN"
+    assert nodes_module.ClearMemoryCache.RETURN_TYPES == ("*", "STRING")
+    assert nodes_module.ClearMemoryCache.RETURN_NAMES == ("output", "status")
+
+    sentinel = object()
+    calls = []
+    original_clear = nodes_module.clear_memory_cache
+    nodes_module.clear_memory_cache = lambda **kwargs: calls.append(kwargs) or "ok"
+    try:
+        assert nodes_module.ClearMemoryCache().run(sentinel, False, True, True) == (sentinel, "ok")
+    finally:
+        nodes_module.clear_memory_cache = original_clear
+
+    assert calls == [
+        {
+            "unload_models": False,
+            "clear_cuda": True,
+            "collect_python": True,
+        }
+    ]
+
+
+def test_clear_memory_cache_calls_comfy_torch_and_gc(monkeypatch):
+    nodes_module = load_nodes_module()
+    calls = []
+
+    comfy = types.ModuleType("comfy")
+    model_management = types.ModuleType("comfy.model_management")
+    model_management.cleanup_models_gc = lambda: calls.append("cleanup_models_gc")
+    model_management.cleanup_models = lambda: calls.append("cleanup_models")
+    model_management.soft_empty_cache = lambda force=False: calls.append(("soft_empty_cache", force))
+    model_management.unload_all_models = lambda: calls.append("unload_all_models")
+    comfy.model_management = model_management
+
+    torch = types.ModuleType("torch")
+
+    class Cuda:
+        @staticmethod
+        def is_available():
+            return True
+
+        @staticmethod
+        def synchronize():
+            calls.append("cuda_synchronize")
+
+        @staticmethod
+        def empty_cache():
+            calls.append("cuda_empty_cache")
+
+        @staticmethod
+        def ipc_collect():
+            calls.append("cuda_ipc_collect")
+
+    torch.cuda = Cuda
+
+    monkeypatch.setitem(sys.modules, "comfy", comfy)
+    monkeypatch.setitem(sys.modules, "comfy.model_management", model_management)
+    monkeypatch.setitem(sys.modules, "torch", torch)
+    monkeypatch.setattr(nodes_module.gc, "collect", lambda: calls.append("gc_collect") or 7)
+
+    status = nodes_module.clear_memory_cache(
+        unload_models=True,
+        clear_cuda=True,
+        collect_python=True,
+    )
+
+    assert calls == [
+        "unload_all_models",
+        "cleanup_models_gc",
+        "cleanup_models",
+        ("soft_empty_cache", True),
+        "cuda_synchronize",
+        "cuda_empty_cache",
+        "cuda_ipc_collect",
+        "gc_collect",
+    ]
+    assert "unloaded ComfyUI models" in status
+    assert "released 7 Python objects" in status
 
 
 def test_server_resolves_empty_and_relative_paths_from_comfy_root():
