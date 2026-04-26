@@ -10,6 +10,14 @@ BIGMAX = 0xFFFFFFFF
 DIMMAX = 8192
 
 
+class AnyType(str):
+    def __ne__(self, other):
+        return False
+
+
+ANY_TYPE = AnyType("*")
+
+
 def _import_optional(module_name):
     try:
         return __import__(module_name, fromlist=["*"]), None
@@ -106,7 +114,7 @@ class ClearMemoryCache:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "anything": ("*", {"forceInput": True}),
+                "anything": (ANY_TYPE, {"forceInput": True}),
                 "unload_models": ("BOOLEAN", {"default": False}),
                 "clear_cuda": ("BOOLEAN", {"default": True}),
                 "collect_python": ("BOOLEAN", {"default": True}),
@@ -114,7 +122,8 @@ class ClearMemoryCache:
         }
 
     CATEGORY = CATEGORY_NAME
-    RETURN_TYPES = ("*", "STRING")
+    DESCRIPTION = "Clear ComfyUI/PyTorch/Python memory caches and pass input through."
+    RETURN_TYPES = (ANY_TYPE, "STRING")
     RETURN_NAMES = ("output", "status")
     FUNCTION = "run"
 
@@ -125,6 +134,37 @@ class ClearMemoryCache:
             collect_python=collect_python,
         )
         return (anything, status)
+
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        return float("NaN")
+
+
+class ClearMemoryCacheNow:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "unload_models": ("BOOLEAN", {"default": False}),
+                "clear_cuda": ("BOOLEAN", {"default": True}),
+                "collect_python": ("BOOLEAN", {"default": True}),
+            }
+        }
+
+    CATEGORY = CATEGORY_NAME
+    DESCRIPTION = "Clear ComfyUI/PyTorch/Python memory caches when this output node runs."
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("status",)
+    FUNCTION = "run"
+    OUTPUT_NODE = True
+
+    def run(self, unload_models, clear_cuda, collect_python):
+        status = clear_memory_cache(
+            unload_models=unload_models,
+            clear_cuda=clear_cuda,
+            collect_python=collect_python,
+        )
+        return (status,)
 
     @classmethod
     def IS_CHANGED(cls, **kwargs):
