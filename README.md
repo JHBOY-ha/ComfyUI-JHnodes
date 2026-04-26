@@ -39,20 +39,6 @@ Clear Memory Cache.output -> For Loop End.flow 或 For Loop End.valueX
 
 注意：这个节点可以释放 PyTorch/ComfyUI 已经不再引用的缓存，但不能释放仍被 loop 的 `valueX`、预览节点、保存节点、视频合成节点或其他下游对象持有的张量。如果某个下游节点把所有循环结果累积起来，显存仍可能增长。
 
-### Clear Memory Cache Now — `JHnodes_ClearMemoryCacheNow`
-
-无透传输入版，作为输出节点运行。用于确认节点是否能在菜单中出现，或手动插一个“只清理不透传”的终点。
-
-| 输入             | 类型    | 说明                                                                  |
-| ---------------- | ------- | --------------------------------------------------------------------- |
-| `unload_models`  | BOOLEAN | 是否调用 ComfyUI `unload_all_models`；更彻底，但下一轮可能需要重载模型 |
-| `clear_cuda`     | BOOLEAN | 清理 torch CUDA/MPS/XPU 等加速器缓存；默认开启                        |
-| `collect_python` | BOOLEAN | 执行 `gc.collect()`；默认开启                                          |
-
-| 输出     | 类型   | 说明                         |
-| -------- | ------ | ---------------------------- |
-| `status` | STRING | 本次尝试执行过的清理动作摘要 |
-
 ### Folder Count — `JHnodes_FolderCount`
 
 | 输入            | 类型   | 说明                                                 |

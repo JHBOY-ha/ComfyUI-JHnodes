@@ -140,37 +140,6 @@ class ClearMemoryCache:
         return float("NaN")
 
 
-class ClearMemoryCacheNow:
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "unload_models": ("BOOLEAN", {"default": False}),
-                "clear_cuda": ("BOOLEAN", {"default": True}),
-                "collect_python": ("BOOLEAN", {"default": True}),
-            }
-        }
-
-    CATEGORY = CATEGORY_NAME
-    DESCRIPTION = "Clear ComfyUI/PyTorch/Python memory caches when this output node runs."
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("status",)
-    FUNCTION = "run"
-    OUTPUT_NODE = True
-
-    def run(self, unload_models, clear_cuda, collect_python):
-        status = clear_memory_cache(
-            unload_models=unload_models,
-            clear_cuda=clear_cuda,
-            collect_python=collect_python,
-        )
-        return (status,)
-
-    @classmethod
-    def IS_CHANGED(cls, **kwargs):
-        return float("NaN")
-
-
 class FolderCount:
     @classmethod
     def INPUT_TYPES(cls):
